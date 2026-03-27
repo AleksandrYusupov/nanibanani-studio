@@ -38,10 +38,11 @@ export async function sendMessage(
   conversationId: string,
   text: string,
   files: File[],
-  settings: { quality: string; aspect_ratio: string; thinking_mode?: string | null }
+  settings: { model: string; quality: string; aspect_ratio: string; thinking_mode?: string | null }
 ): Promise<SendMessageResponse> {
   const formData = new FormData()
   formData.append('text', text)
+  formData.append('model', settings.model)
   formData.append('quality', settings.quality)
   formData.append('aspect_ratio', settings.aspect_ratio)
   if (settings.thinking_mode) {

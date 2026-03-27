@@ -19,7 +19,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { quality, aspectRatio, thinkingMode } = useSettingsStore()
+  const { model, quality, aspectRatio, thinkingMode } = useSettingsStore()
 
   const { data: messages = [] } = useQuery({
     queryKey: ['messages', conversationId],
@@ -31,6 +31,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
       setIsGenerating(true)
       setError(null)
       return sendMessage(conversationId, text, files, {
+        model,
         quality,
         aspect_ratio: aspectRatio,
         thinking_mode: thinkingMode,

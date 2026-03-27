@@ -42,6 +42,7 @@ async def list_messages(
 async def send_message(
     conversation_id: uuid.UUID,
     text: str = Form(""),
+    model: Optional[str] = Form(None),
     quality: str = Form("1K"),
     aspect_ratio: str = Form("1:1"),
     thinking_mode: Optional[str] = Form(None),
@@ -51,6 +52,9 @@ async def send_message(
     conv = await db.get(Conversation, conversation_id)
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Use model from request, or fall back to conversation default
+    model_key = model or conv.model
 
     if not text.strip() and not files:
         raise HTTPException(status_code=400, detail="Message must have text or files")
@@ -98,7 +102,7 @@ async def send_message(
     try:
         results, gen_time_ms = await generate_image(
             prompt=prompt,
-            model_key=conv.model,
+            model_key=model_key,
             quality=quality,
             aspect_ratio=aspect_ratio,
             thinking_mode=thinking_mode,
@@ -118,7 +122,7 @@ async def send_message(
         conversation_id=conversation_id,
         role="assistant",
         text_content="\n".join(response_text_parts) if response_text_parts else None,
-        model_used=conv.model,
+        model_used=model_key,
         quality=quality,
         aspect_ratio=aspect_ratio,
         thinking_mode=thinking_mode,
