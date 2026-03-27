@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import io
+import logging
 import time
 from dataclasses import dataclass
 
@@ -10,9 +11,11 @@ from PIL import Image
 
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 MODEL_MAP = {
-    "nanibanani-pro": "gemini-3-pro-image-preview",
-    "nanibanani-2": "gemini-3.1-flash-image-preview",
+    "nanibanani-pro": "gemini-2.0-flash-preview-image-generation",
+    "nanibanani-2": "gemini-2.0-flash-exp-image-generation",
 }
 
 SUPPORTED_ASPECT_RATIOS = [
@@ -52,6 +55,8 @@ def _generate_sync(
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     model = MODEL_MAP[model_key]
 
+    logger.info(f"Generating with model={model}, quality={quality}, aspect_ratio={aspect_ratio}, thinking={thinking_mode}")
+
     contents: list = [prompt]
     if input_images:
         for img_bytes in input_images:
@@ -61,18 +66,6 @@ def _generate_sync(
     config_kwargs: dict = {
         "response_modalities": ["TEXT", "IMAGE"],
     }
-
-    # Only add image_config if we have valid settings
-    image_config_kwargs = {}
-    if aspect_ratio and aspect_ratio in SUPPORTED_ASPECT_RATIOS:
-        image_config_kwargs["aspect_ratio"] = aspect_ratio
-    if quality and quality in SUPPORTED_QUALITIES:
-        image_config_kwargs["output_image_size"] = quality
-
-    if image_config_kwargs:
-        config_kwargs["image_generation_config"] = types.ImageGenerationConfig(
-            **image_config_kwargs
-        )
 
     if model_key == "nanibanani-2" and thinking_mode and thinking_mode in THINKING_BUDGETS:
         config_kwargs["thinking_config"] = types.ThinkingConfig(
@@ -93,7 +86,10 @@ def _generate_sync(
             if part.text is not None:
                 results.append(TextPart(text=part.text))
             elif part.inline_data is not None:
-                img_data = base64.b64decode(part.inline_data.data)
+                if isinstance(part.inline_data.data, str):
+                    img_data = base64.b64decode(part.inline_data.data)
+                else:
+                    img_data = part.inline_data.data
                 results.append(
                     ImagePart(data=img_data, mime_type=part.inline_data.mime_type)
                 )
@@ -125,4 +121,5 @@ async def generate_image(
         input_images,
     )
     elapsed_ms = int((time.monotonic() - start) * 1000)
+    logger.info(f"Generation completed in {elapsed_ms}ms, got {len(results)} parts")
     return results, elapsed_ms

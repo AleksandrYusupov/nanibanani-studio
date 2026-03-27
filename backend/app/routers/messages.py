@@ -1,4 +1,6 @@
 import io
+import logging
+import traceback
 import uuid
 from typing import Optional
 
@@ -13,6 +15,8 @@ from app.models import Conversation, Message, Attachment
 from app.schemas.message import MessageResponse, SendMessageResponse
 from app.services.gemini import generate_image, ImagePart, TextPart
 from app.services.storage import storage_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/conversations/{conversation_id}/messages", tags=["messages"])
 
@@ -101,6 +105,7 @@ async def send_message(
             input_images=input_images if input_images else None,
         )
     except Exception as e:
+        logger.error(f"Generation failed: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
 
     # 4. Create assistant message
@@ -152,18 +157,12 @@ async def send_message(
             img_counter += 1
 
     # 6. Update conversation title from first message
-    msg_count = await db.scalar(
-        select(Message.id).where(Message.conversation_id == conversation_id).limit(2)
-    )
     if conv.title == "New Chat" and text.strip():
         conv.title = text.strip()[:100]
 
     await db.commit()
 
     # Reload with attachments
-    await db.refresh(user_msg)
-    await db.refresh(assistant_msg)
-
     user_result = await db.execute(
         select(Message)
         .where(Message.id == user_msg.id)

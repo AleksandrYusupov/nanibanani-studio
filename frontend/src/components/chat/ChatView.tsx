@@ -6,7 +6,7 @@ import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 import { Lightbox } from '@/components/media/Lightbox'
-import { Settings, Loader2 } from 'lucide-react'
+import { Settings, Loader2, AlertTriangle } from 'lucide-react'
 
 interface ChatViewProps {
   conversationId: string
@@ -17,6 +17,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const { quality, aspectRatio, thinkingMode } = useSettingsStore()
 
@@ -28,6 +29,7 @@ export function ChatView({ conversationId }: ChatViewProps) {
   const sendMutation = useMutation({
     mutationFn: async ({ text, files }: { text: string; files: File[] }) => {
       setIsGenerating(true)
+      setError(null)
       return sendMessage(conversationId, text, files, {
         quality,
         aspect_ratio: aspectRatio,
@@ -39,8 +41,10 @@ export function ChatView({ conversationId }: ChatViewProps) {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
       setIsGenerating(false)
     },
-    onError: () => {
+    onError: (err: any) => {
       setIsGenerating(false)
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error'
+      setError(detail)
     },
   })
 
@@ -68,6 +72,23 @@ export function ChatView({ conversationId }: ChatViewProps) {
 
       {/* Settings panel */}
       {settingsOpen && <SettingsPanel />}
+
+      {/* Error banner */}
+      {error && (
+        <div className="mx-4 mt-2 flex items-start gap-2 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium">Generation failed</p>
+            <p className="text-red-400 mt-1">{error}</p>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-200 text-xs"
+          >
+            dismiss
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <MessageList
