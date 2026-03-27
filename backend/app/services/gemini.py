@@ -65,6 +65,10 @@ def _generate_sync(
 
     config_kwargs: dict = {
         "response_modalities": ["TEXT", "IMAGE"],
+        "image_config": types.ImageConfig(
+            aspect_ratio=aspect_ratio,
+            image_size=quality,  # "1K", "2K", "4K"
+        ),
     }
 
     if model_key == "nanibanani-2" and thinking_mode and thinking_mode in THINKING_BUDGETS:
