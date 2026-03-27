@@ -14,8 +14,8 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 MODEL_MAP = {
-    "nanibanani-pro": "gemini-2.0-flash-preview-image-generation",
-    "nanibanani-2": "gemini-2.0-flash-exp-image-generation",
+    "nanibanani-pro": "gemini-3-pro-image-preview",
+    "nanibanani-2": "gemini-3.1-flash-image-preview",
 }
 
 SUPPORTED_ASPECT_RATIOS = [
