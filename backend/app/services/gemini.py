@@ -24,9 +24,9 @@ SUPPORTED_ASPECT_RATIOS = [
 
 SUPPORTED_QUALITIES = ["1K", "2K", "4K"]
 
-THINKING_BUDGETS = {
-    "minimal": 1024,
-    "long": 8192,
+THINKING_LEVELS = {
+    "minimal": "minimal",
+    "long": "high",
 }
 
 
@@ -52,7 +52,10 @@ def _generate_sync(
     thinking_mode: str | None,
     input_images: list[bytes] | None,
 ) -> GenerationResult:
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    client = genai.Client(
+        api_key=settings.GEMINI_API_KEY,
+        http_options=types.HttpOptions(timeout=300_000),  # 5 minutes
+    )
     model = MODEL_MAP[model_key]
 
     logger.info(f"Generating with model={model}, quality={quality}, aspect_ratio={aspect_ratio}, thinking={thinking_mode}")
@@ -71,9 +74,9 @@ def _generate_sync(
         ),
     }
 
-    if model_key == "nanibanani-2" and thinking_mode and thinking_mode in THINKING_BUDGETS:
+    if model_key == "nanibanani-2" and thinking_mode and thinking_mode in THINKING_LEVELS:
         config_kwargs["thinking_config"] = types.ThinkingConfig(
-            thinking_budget=THINKING_BUDGETS[thinking_mode]
+            thinking_level=THINKING_LEVELS[thinking_mode]
         )
 
     config = types.GenerateContentConfig(**config_kwargs)

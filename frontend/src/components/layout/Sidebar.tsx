@@ -3,7 +3,7 @@ import { getConversations, createConversation, deleteConversation } from '@/api/
 import { useSettingsStore } from '@/stores/settingsStore'
 import { MODEL_LABELS } from '@/types'
 import type { ModelKey } from '@/types'
-import { Plus, Trash2, MessageSquare } from 'lucide-react'
+import { Plus, Trash2, MessageSquare, PanelLeftClose } from 'lucide-react'
 
 interface SidebarProps {
   onClose: () => void
@@ -23,7 +23,8 @@ export function Sidebar({ onClose }: SidebarProps) {
     onSuccess: (conv) => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
       setActiveConversation(conv.id)
-      onClose()
+      // Close sidebar only on mobile
+      if (window.innerWidth < 1024) onClose()
     },
   })
 
@@ -39,14 +40,21 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4">
+      <div className="p-4 flex gap-2">
         <button
           onClick={() => createMutation.mutate()}
           disabled={createMutation.isPending}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover rounded-lg font-medium transition-colors disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover rounded-lg font-medium transition-colors disabled:opacity-50"
         >
           <Plus size={18} />
           New Chat
+        </button>
+        <button
+          onClick={onClose}
+          className="p-2.5 rounded-lg hover:bg-surface-lighter text-gray-400 hover:text-gray-200 transition-colors"
+          title="Close sidebar"
+        >
+          <PanelLeftClose size={18} />
         </button>
       </div>
 
@@ -60,7 +68,8 @@ export function Sidebar({ onClose }: SidebarProps) {
             `}
             onClick={() => {
               setActiveConversation(conv.id)
-              onClose()
+              // Close sidebar only on mobile
+              if (window.innerWidth < 1024) onClose()
             }}
           >
             <MessageSquare size={16} className="shrink-0 text-gray-500" />

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { FilePreview } from './FilePreview'
 import { Send, Paperclip, Image as ImageIcon } from 'lucide-react'
@@ -17,6 +17,27 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     setFiles((prev) => [...prev, ...acceptedFiles])
   }, [])
 
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items
+    const imageFiles: File[] = []
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile()
+        if (file) imageFiles.push(file)
+      }
+    }
+    if (imageFiles.length > 0) {
+      setFiles((prev) => [...prev, ...imageFiles])
+    }
+  }, [])
+
+  const adjustHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+  }, [])
+
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     noClick: true,
@@ -30,7 +51,17 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     onSend(text, files)
     setText('')
     setFiles([])
+    // Reset textarea height after clearing
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+    })
   }
+
+  useEffect(() => {
+    adjustHeight()
+  }, [text, adjustHeight])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -83,11 +114,12 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           disabled={disabled}
           placeholder="Describe the image you want to generate..."
           rows={1}
-          className="flex-1 bg-surface-light rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500 disabled:opacity-50 max-h-32 overflow-y-auto"
-          style={{ minHeight: '42px' }}
+          className="flex-1 bg-surface-light rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500 disabled:opacity-50 overflow-y-auto"
+          style={{ minHeight: '42px', maxHeight: '200px' }}
         />
 
         <button

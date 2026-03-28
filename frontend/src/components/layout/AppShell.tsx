@@ -23,7 +23,7 @@ export function AppShell() {
         className={`
           fixed lg:relative z-30 h-full w-72 bg-surface-light border-r border-border
           transition-transform duration-200
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-0'}
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         <Sidebar onClose={() => setSidebarOpen(false)} />
@@ -31,16 +31,19 @@ export function AppShell() {
 
       {/* Main area */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-surface-light"
-          >
-            <Menu size={20} />
-          </button>
-          <span className="text-sm font-medium text-gray-400">NaniBanani Studio</span>
-        </div>
+        {/* Top bar — visible when sidebar is closed */}
+        {!sidebarOpen && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg hover:bg-surface-light"
+              title="Open sidebar"
+            >
+              <Menu size={20} />
+            </button>
+            <span className="text-sm font-medium text-gray-400">NaniBanani Studio</span>
+          </div>
+        )}
 
         {activeId ? (
           <ChatView conversationId={activeId} />
